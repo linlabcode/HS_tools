@@ -9,11 +9,13 @@ import collections
 from collections import defaultdict
 import os
 import sys
-sys.path.append('/storage/cylin/bin/pipeline')
+sys.path.append('/home/harrison/Downloads/pipeline-master')
 import utils
+import math
+
 
 #parses the tab delimited table
-table=utils.parseTable('CodonUsageTables.txt', '\t')
+table=utils.parseTable('/home/harrison/PPscripts/HS_tools/codon_hg19.txt', '\t')
 
 #make the first row the key and the next 2 rows the values for that key
 hg19_bias = defaultdict()
@@ -98,42 +100,61 @@ if dna1.count(gRNA) == 1 and revcom_dna1.count(rev_gRNA) == 0:
                         codon_list.append(i)
 
                 #finds a different codon with the highest codon bias       
-                freq = 0
-                if i != PAM:
-                    for i in codon_list:
-                        if freq == 0:
-                            freq = hg19_bias[i][1]
-                            best_codon = i
-                        if hg19_bias[i][1] > freq:
-                            freq = hg19_bias[i][1]
-
-                    
-                    if sys.argv[1].find('U') == -1:
-                        i = i.replace('U', 'T')
-                    elif sys.argv[1].find('T') == -1:
-                        i = i
-
-                    print 'Now swapping ' + t + ' for ' + i + ' because it has the highest bias for ' + hg19_bias[PAM][0]
-                    
-                    #So it is easier to read in the seqeunce
-                    i = i.lower()
-
-                    dna2 = list(dna1)
-                    
-                    #replaces old codon overlapping PAM with new similar codon
-                    dna2[a.end()], dna2[a.end() + 1], dna2[a.end() + 2] = i
-                        
-                    #list becomes a string again for legibility 
-                    dna2 = ''.join(dna2)
-                    
-                    #print out the new DNA string
-                    if sys.argv[1].find('U') == -1:
-                        dna2 = dna2.replace('U', 'T')
-                        print dna2
-                    else:
-                        print dna2
+    
                 
+                for b in codon_list:
+                    if b == t:
+                        codon_list.remove(b)
+                                       
+                        f = hg19_bias[PAM]
+                        del hg19_bias[PAM]
+                        
 
+                        freq_diff = 0
+                        freq_diff_list = [] 
+                    
+                        for i in codon_list:
+                            
+
+                            freq_diff = f[1] - hg19_bias[i][1]
+                            freq_diff = math.fabs(freq_diff)
+                            freq_diff_list.append(freq_diff)
+                                      
+                            
+                        freq_diff_list.sort()
+                        x = freq_diff_list[0] 
+                        for i in codon_list:
+                            
+                            if math.fabs(f[1] - hg19_bias[i][1]) == x and i != 'AGG':
+                               
+
+                                if sys.argv[1].find('U') == -1:
+                                    i = i.replace('U', 'T')
+                                elif sys.argv[1].find('T') == -1:
+                                    i = i
+
+                                print 'Now swapping ' + t + ' for ' + i + ' because its frequencies are close and both produce ' + f[0]
+                                
+                                #So it is easier to read in the seqeunce
+                                i = i.lower()
+
+                                dna2 = list(dna1)
+                                
+                                #replaces old codon overlapping PAM with new similar codon
+                                dna2[a.end()], dna2[a.end() + 1], dna2[a.end() + 2] = i
+                                    
+                                #list becomes a string again for legibility 
+                                dna2 = ''.join(dna2)
+                                
+                                #print out the new DNA string
+                                if sys.argv[1].find('U') == -1:
+                                    dna2 = dna2.replace('U', 'T')
+                                    print dna2
+                                    quit()
+                                else:
+                                    print dna2   
+                                    quit()
+                   
             #This asks whether the end position is in a different frame based on the positions remainder
             elif (a.end()%3) == 1:
                         
@@ -144,9 +165,9 @@ if dna1.count(gRNA) == 1 and revcom_dna1.count(rev_gRNA) == 0:
                         
                 print'The PAM is in a 231 frame'
                 
-                if sys.argv[1].find('U') == -1:
-                    t = codon_PAM.replace('U', 'T')
-                elif sys.argv[1].find('T') == -1:
+                if sys.argv[1].find('T') == -1:
+                    t = codon_PAM.replace('T', 'U')
+                elif sys.argv[1].find('U') == -1:
                     t = codon_PAM
                       
                 print t + ' Is the overlapping codon'
@@ -157,37 +178,51 @@ if dna1.count(gRNA) == 1 and revcom_dna1.count(rev_gRNA) == 0:
                 for i in hg19_bias:
                     if hg19_bias[i][0]==hg19_bias[codon_PAM][0]:
                         codon_list.append(i)
-                       
-                freq = 0
+
                 
-                    
-                for i in codon_list:
-                    if i != codon_PAM:
+                for b in codon_list:
+                    if b == t:
+                        codon_list.remove(b)
+              
+                        f = hg19_bias[codon_PAM]
+                        del hg19_bias[codon_PAM]
                         
-                        if freq == 0:
-                            freq = hg19_bias[i][1]
-                            best_codon = i
-                        if hg19_bias[i][1] > freq:
-                            freq = hg19_bias[i][1]
 
-                        if sys.argv[1].find('U') == -1:
-                            i = i.replace('U', 'T')
-                        elif sys.argv[1].find('T') == -1:
-                            i = i
+                        freq_diff = 0
+                        freq_diff_list = [] 
                     
-                        print 'Now swapping ' + t + ' for ' + i + ' because it has the next highest bias for ' + hg19_bias[codon_PAM][0]
-                        
-                        i = i.lower()
+                        for i in codon_list:
+                            
 
-                        dna2 = list(dna1)
+                            freq_diff = f[1] - hg19_bias[i][1]
+                            freq_diff = math.fabs(freq_diff)
+                            freq_diff_list.append(freq_diff)
+                                      
+                            
+                        freq_diff_list.sort()
+                        x = freq_diff_list[0] 
+                        for i in codon_list:
+                            
+                            if math.fabs(f[1] - hg19_bias[i][1]) == x:
 
-                        dna2[a.end() - 1], dna2[a.end()], dna2[a.end() + 1] = i
-                        
-                        dna2 = ''.join(dna2)
-                    
-                        if sys.argv[1].find('U') == -1:
-                            dna2 = dna2.replace('U', 'T')
-                        print dna2
+                                if sys.argv[1].find('U') == -1:
+                                    i = i.replace('U', 'T')
+                                elif sys.argv[1].find('T') == -1:
+                                    i = i
+                            
+                                print 'Now swapping ' + t + ' for ' + i + ' because its frequencies are close and both produce ' + f[0]
+                                
+                                i = i.lower()
+
+                                dna2 = list(dna1)
+
+                                dna2[a.end() - 1], dna2[a.end()], dna2[a.end() + 1] = i
+                                
+                                dna2 = ''.join(dna2)
+                            
+                                if sys.argv[1].find('U') == -1:
+                                    dna2 = dna2.replace('U', 'T')
+                                print dna2
                 
             else:
                 print 'PAM is in 321 frame. You cannot alter the PAM without altering the future peptide'
@@ -247,35 +282,51 @@ elif dna1.count(gRNA) == 0 and revcom_dna1.count(rev_gRNA) == 1:
                         if hg19_bias[i][0]==hg19_bias[PAM][0]:
                             codon_list.append(i)
                            
-                    freq = 0
-                    if i != PAM:
-                        for i in codon_list:
-                            if freq == 0:
-                                freq = hg19_bias[i][1]
-                                best_codon = i
-                            if hg19_bias[i][1] > freq:
-                                freq = hg19_bias[i][1]
+                    for b in codon_list:
+                        if b == t:
+                            codon_list.remove(b)
+                                       
+                            f = hg19_bias[PAM]
+                            del hg19_bias[PAM]
+                        
 
-                        if sys.argv[1].find('U') == -1:
-                            i = i.replace('U', 'T')
-                        elif sys.argv[1].find('T') == -1:
-                            i = i
-
-                        print 'Now swapping ' + t + ' for ' + i + ' because it has the highest bias for ' + hg19_bias[PAM][0]
+                            freq_diff = 0
+                            freq_diff_list = [] 
+                    
+                            for i in codon_list:
                             
-                        i = i.lower()
 
-                        dna2 = list(dna1)
-                                
-                        dna2[a.end()], dna2[a.end() + 1], dna2[a.end() + 2] = i
-                        
-                        dna2 = ''.join(dna2)
-                        
-                        if sys.argv[1].find('U') == -1:
-                            dna2 = dna2.replace('U', 'T')
-                            print dna2
-                        else:
-                            print dna2
+                                freq_diff = f[1] - hg19_bias[i][1]
+                                freq_diff = math.fabs(freq_diff)
+                                freq_diff_list.append(freq_diff)
+                                      
+                            
+                            freq_diff_list.sort()
+                            x = freq_diff_list[0] 
+                            for i in codon_list:
+                            
+                                if math.fabs(f[1] - hg19_bias[i][1]) == x and i != 'AGG':
+
+                                    if sys.argv[1].find('U') == -1:
+                                        i = i.replace('U', 'T')
+                                    elif sys.argv[1].find('T') == -1:
+                                        i = i
+
+                                    print 'Now swapping ' + t + ' for ' + i + ' because its frequencies are close and both produce ' + f[0]
+                                        
+                                    i = i.lower()
+
+                                    dna2 = list(dna1)
+                                            
+                                    dna2[a.end()], dna2[a.end() + 1], dna2[a.end() + 2] = i
+                                    
+                                    dna2 = ''.join(dna2)
+                                    
+                                    if sys.argv[1].find('U') == -1:
+                                        dna2 = dna2.replace('U', 'T')
+                                        print dna2
+                                    else:
+                                        print dna2
                 
             elif (a.end()%3) == 1:
                         
@@ -285,9 +336,9 @@ elif dna1.count(gRNA) == 0 and revcom_dna1.count(rev_gRNA) == 1:
                         
                 print'The PAM is in a 231 frame'
                 
-                if sys.argv[1].find('U') == -1:
-                    t = codon_PAM.replace('U', 'T')
-                elif sys.argv[1].find('T') == -1:
+                if sys.argv[1].find('T') == -1:
+                    t = codon_PAM.replace('T', 'U')
+                elif sys.argv[1].find('U') == -1:
                     t = codon_PAM
                       
                 print t + ' Is the overlapping codon'
@@ -299,33 +350,49 @@ elif dna1.count(gRNA) == 0 and revcom_dna1.count(rev_gRNA) == 1:
                     if hg19_bias[i][0]==hg19_bias[codon_PAM][0]:
                         codon_list.append(i)
                        
-                freq = 0
-                if i != codon_PAM:
-                    for i in codon_list:
-                        if freq == 0:
-                            freq = hg19_bias[i][1]
-                            best_codon = i
-                        if hg19_bias[i][1] > freq:
-                            freq = hg19_bias[i][1]
-
-                    if sys.argv[1].find('U') == -1:
-                        i = i.replace('U', 'T')
-                    elif sys.argv[1].find('T') == -1:
-                        i = i
-                
-                    print 'Now swapping ' + t + ' for ' + i + ' because it has the highest bias for ' + hg19_bias[codon_PAM][0]
-                    
-                    i = i.lower()
-
-                    dna2 = list(dna1)
+                for b in codon_list:
+                    if b == t:
+                        codon_list.remove(b)
+              
+                        f = hg19_bias[codon_PAM]
+                        del hg19_bias[codon_PAM]
                         
-                    dna2[a.end() - 1], dna2[a.end()], dna2[a.end() + 1] = i
-                                        
-                    dna2 = ''.join(dna2)
-                
-                    if sys.argv[1].find('U') == -1:
-                        dna2 = dna2.replace('U', 'T')
-                    print dna2
+
+                        freq_diff = 0
+                        freq_diff_list = [] 
+                    
+                        for i in codon_list:
+                            
+
+                            freq_diff = f[1] - hg19_bias[i][1]
+                            freq_diff = math.fabs(freq_diff)
+                            freq_diff_list.append(freq_diff)
+                                      
+                            
+                        freq_diff_list.sort()
+                        x = freq_diff_list[0] 
+                        for i in codon_list:
+                            
+                            if math.fabs(f[1] - hg19_bias[i][1]) == x:
+
+                                if sys.argv[1].find('U') == -1:
+                                    i = i.replace('U', 'T')
+                                elif sys.argv[1].find('T') == -1:
+                                    i = i
+                            
+                                print 'Now swapping ' + t + ' for ' + i + ' because its frequencies are close and both produce ' + f[0]
+                                
+                                i = i.lower()
+
+                                dna2 = list(dna1)
+                                    
+                                dna2[a.end() - 1], dna2[a.end()], dna2[a.end() + 1] = i
+                                                    
+                                dna2 = ''.join(dna2)
+                            
+                                if sys.argv[1].find('U') == -1:
+                                    dna2 = dna2.replace('U', 'T')
+                                print dna2
                 
             else:
                 print 'PAM is in 321 frame. You cannot alter the PAM without altering the future peptide'
