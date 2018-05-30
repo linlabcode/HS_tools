@@ -1,0 +1,6 @@
+#!/usr/bin/bash
+#SBATCH --output=/storage/cylin/grail/projects/proving_ground/slurm_%j.out
+#SBATCH -e /storage/cylin/grail/projects/proving_ground/slurm_%j.err
+pwd; hostname; date
+
+echo 'Hello World'
